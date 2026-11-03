@@ -1,0 +1,27 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.lite.yt480'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.lite.yt480"
+        minSdk 21
+        targetSdk 33
+        versionCode 2
+        versionName "1.1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
