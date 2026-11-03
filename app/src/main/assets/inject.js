@@ -2,6 +2,13 @@
   if (window.__yt480) return;
   window.__yt480 = true;
 
+  // ===== CẤU HÌNH (sửa tại đây rồi build lại) =====
+  var Q = 'large';              // chất lượng: 'small'=240p, 'medium'=360p, 'large'=480p, 'hd720'=720p
+  var BLOCK_AUTONEXT = true;    // true: không tự phát video kế tiếp khi video kết thúc
+  var HIDE_CAPTIONS = true;     // true: tắt phụ đề
+  var HIDE_EXTRAS = true;       // true: ẩn bình luận và dải Shorts cho nhẹ trang
+  // =================================================
+
   // 1) Báo cho trang biết máy KHÔNG hỗ trợ VP9/AV1/WebM -> YouTube sẽ chọn H.264 (mp4) + AAC
   var BAD = ['webm', 'vp8', 'vp9', 'vp09', 'av01', 'opus'];
   function bad(t) {
@@ -23,8 +30,7 @@
     }
   } catch (e) {}
 
-  // 2) Đặt sẵn chất lượng 480p ("large" là tên nội bộ của 480p)
-  var Q = 'large';
+  // 2) Đặt sẵn chất lượng (mặc định 480p, "large" là tên nội bộ của 480p)
   try {
     var tc = Date.now(), te = tc + 2592000000;
     localStorage.setItem('yt-player-quality', JSON.stringify({ data: Q, expiration: te, creation: tc }));
@@ -36,7 +42,9 @@
     'animation-duration:.001s!important;animation-delay:0s!important;animation-iteration-count:1!important;' +
     'transition-duration:.001s!important;transition-delay:0s!important;scroll-behavior:auto!important;' +
     'box-shadow:none!important;text-shadow:none!important;' +
-    'backdrop-filter:none!important;-webkit-backdrop-filter:none!important;will-change:auto!important}';
+    'backdrop-filter:none!important;-webkit-backdrop-filter:none!important;will-change:auto!important}' +
+    (HIDE_CAPTIONS ? '.ytp-caption-window-container,.caption-window,.ytp-caption-segment{display:none!important}' : '') +
+    (HIDE_EXTRAS ? 'ytm-comment-section-renderer,ytm-reel-shelf-renderer{display:none!important}' : '');
   function addCss() {
     try {
       if (document.getElementById('__yt480css')) return true;
@@ -52,7 +60,15 @@
   addCss();
   document.addEventListener('DOMContentLoaded', addCss, false);
 
-  var lastVid = null, tries = 0;
+  if (BLOCK_AUTONEXT) {
+    try {
+      document.addEventListener('ended', function (e) {
+        if (e.target && e.target.tagName === 'VIDEO') e.stopImmediatePropagation();
+      }, true);
+    } catch (e) {}
+  }
+
+  var lastVid = null, tries = 0, capVid = null;
   function apply() {
     try {
       if (document.hidden) return;
@@ -63,6 +79,10 @@
       var vid = null;
       try { vid = p.getVideoData && p.getVideoData().video_id; } catch (e) {}
       if (vid !== lastVid) { lastVid = vid; tries = 0; }
+      if (HIDE_CAPTIONS && vid !== capVid) {
+        capVid = vid;
+        try { if (p.unloadModule) p.unloadModule('captions'); } catch (e) {}
+      }
       if (tries >= 4) return;
       var cur = null;
       try { cur = p.getPlaybackQuality && p.getPlaybackQuality(); } catch (e) {}
